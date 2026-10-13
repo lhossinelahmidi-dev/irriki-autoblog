@@ -2,11 +2,13 @@ name: Automated Daily Irriki Tourism Blog Post
 
 on:
   schedule:
-    # Runs between 6:00 AM and 3:00 PM UTC (multiple check slots to guarantee 1 daily post)
-    - cron: '20 6 * * *'
-    - cron: '45 9 * * *'
-    - cron: '15 12 * * *'
-    - cron: '30 14 * * *'
+    # Runs across the day to publish 5 posts per day
+    - cron: '0 6 * * *'
+    - cron: '0 9 * * *'
+    - cron: '0 12 * * *'
+    - cron: '0 15 * * *'
+    - cron: '0 18 * * *'
+    - cron: '0 21 * * *'
   workflow_dispatch:
 
 permissions:

@@ -28,16 +28,19 @@ headers = {
     "User-Agent": "Mozilla/5.0"
 }
 
-# Check if a post was already published today (UTC date) so multiple cron slots guarantee 1 post/day
+# Check if 5 posts were already published today (UTC date)
 today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 if not FORCE_POST:
     try:
-        recent_res = requests.get(f"{wp_api_endpoint}?per_page=1", headers=headers, timeout=15)
-        if recent_res.status_code == 200 and len(recent_res.json()) > 0:
-            latest_post_date = recent_res.json()[0].get("date_gmt", "")[:10]
-            if latest_post_date == today_str:
-                print(f"A blog post was already published today ({today_str}). Exiting cleanly.")
+        recent_res = requests.get(f"{wp_api_endpoint}?per_page=15", headers=headers, timeout=15)
+        if recent_res.status_code == 200:
+            posts = recent_res.json()
+            today_posts = [p for p in posts if p.get("date_gmt", "")[:10] == today_str]
+            if len(today_posts) >= 5:
+                print(f"5 blog posts already published today ({today_str}). Daily quota reached. Exiting cleanly.")
                 exit(0)
+            else:
+                print(f"Published {len(today_posts)}/5 posts today. Proceeding with post #{len(today_posts) + 1}...")
     except Exception as e:
         print(f"Date check warning: {e}")
 
@@ -106,16 +109,19 @@ if selected_topic in CUSTOM_TOPIC_GUIDES:
     article_excerpt = CUSTOM_TOPIC_GUIDES[selected_topic]["excerpt"]
     article_html = CUSTOM_TOPIC_GUIDES[selected_topic]["content"].strip()
 
+is_french = any(w in selected_topic.lower() for w in ["dunes de", "excursion", "bivouac", "maroc", "désert", "desert chegaga", "prix", "meilleure", "dormir", "nuit", "comment", "guide complet", "randonnée", "traversée", "incontournables"])
+lang_str = "French (Français)" if is_french else "English"
+
 system_prompt = (
-    "You are an expert Morocco travel writer and Sahara desert expedition guide writing for 'Irriki Tourism' (https://irrikitourism.com), "
-    "based in Foum Zguid / Lake Iriki, southern Morocco. "
-    "Write an engaging, practical, 900-word SEO-optimized travel blog post in English that focuses 100% on the exact title provided. "
-    "Format in clean semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, and <strong> tags (do NOT include <h1> or markdown code fences). "
-    "Naturally mention Irriki Tourism's offerings where relevant: 4x4 desert tours from Foum Zguid, Lake Iriki excursions, camel trekking, "
-    "quad biking, sandboarding, stargazing, and traditional Berber desert camp (1-Day tour 150€, 2-Day tour 160€, 3-Day tour 230€, WhatsApp +212 715 131 709). "
-    "The very first <p> paragraph MUST be a compelling 2-sentence summary specifically tailored to the topic."
+    f"You are an expert Morocco travel journalist and Sahara desert expedition guide writing for 'Irriki Tourism' (https://irrikitourism.com), "
+    f"based in Foum Zguid, Lake Iriki, and Erg Chegaga in southern Morocco. "
+    f"Write an engaging, authoritative, 900-word SEO-optimized travel blog post in {lang_str} that focuses 100% on the exact title provided. "
+    f"Format in clean semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, and <strong> tags (do NOT include <h1> or markdown code fences). "
+    f"Naturally mention Irriki Tourism's authentic offerings: 4x4 desert expeditions to Erg Chegaga & Lake Iriki from Foum Zguid, "
+    f"traditional Berber bivouac camp under the stars, sunset camel trekking, sandboarding, and direct booking via WhatsApp (+212 715 131 709 / https://irrikitourism.com/#packages). "
+    f"The very first <p> paragraph MUST be a compelling 2-sentence summary specifically tailored to the topic so it also serves as the meta description/excerpt."
 )
-user_prompt = f"Write a comprehensive, SEO-optimized Morocco Sahara travel guide titled: '{selected_topic}'."
+user_prompt = f"Write a comprehensive, SEO-optimized travel guide in {lang_str} titled: '{selected_topic}'."
 
 # Attempt 1: GitHub Models Inference API
 if not article_html and GH_TOKEN:
