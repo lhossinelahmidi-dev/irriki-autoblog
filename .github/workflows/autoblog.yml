@@ -1,0 +1,50 @@
+name: Automated Daily Irriki Tourism Blog Post
+
+on:
+  schedule:
+    # Runs between 6:00 AM and 3:00 PM UTC (multiple check slots to guarantee 1 daily post)
+    - cron: '20 6 * * *'
+    - cron: '45 9 * * *'
+    - cron: '15 12 * * *'
+    - cron: '30 14 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  models: read
+
+jobs:
+  publish-article:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Generate & Publish Article to WordPress
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USERNAME: ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python autoblog.py
+
+      - name: Commit & Push Updated Topics List
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add topics.txt used_topics.txt
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update Irriki Tourism topics queue" && git push)
