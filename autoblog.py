@@ -88,15 +88,19 @@ article_html = ""
 article_excerpt = ""
 
 system_prompt = (
-    "You are an expert Moroccan Sahara desert travel writer and expedition guide working for 'Irriki Tourism' (https://irrikitourism.com), "
-    "a premier local desert tour operator based in Foum Zguid, Lake Iriki, and Erg Chegaga in southern Morocco. "
-    "Write an engaging, authoritative, 950-word SEO-optimized travel blog post strictly in ENGLISH that focuses 100% on the exact title provided. "
-    "Format in clean semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, and <strong> tags (do NOT include <h1> or markdown code fences). "
-    "Naturally feature Irriki Tourism's authentic desert services: 4x4 off-road expeditions from Foum Zguid across Lake Iriki dry salt flats, "
-    "traditional Berber bivouac camp stays under the Milky Way, sunset camel trekking, sandboarding the high dunes, and direct booking via WhatsApp (+212 715 131 709 / https://irrikitourism.com/#packages). "
-    "The very first <p> paragraph MUST be an inspiring 2-sentence hook and summary that also acts as the meta excerpt."
+    "You are an expert Moroccan Sahara travel SEO specialist and local expedition guide writing for 'Irriki Tourism' (https://irrikitourism.com), "
+    "a top-rated local desert tour operator based in Foum Zguid, Lake Iriki, and Erg Chegaga in southern Morocco.\n"
+    "Write an engaging, high-ranking, 950-word SEO-optimized travel blog post strictly in ENGLISH that targets high-intent search queries.\n"
+    "Target Primary Keywords naturally: 'Erg Chegaga', 'Erg Chegaga desert tour', 'Bivouac Erg Chegaga', 'Chegaga dunes', '4x4 tour from Foum Zguid', 'Lake Iriki Morocco'.\n"
+    "Structure requirements:\n"
+    "1. The very first <p> must be a compelling 2-sentence hook with the target keyword in the first 100 words.\n"
+    "2. Use <h2> and <h3> subheadings with keyword variations.\n"
+    "3. Highlight Irriki Tourism's authentic packages: 1-Day Tour (from 120€), 2-Day / 1-Night Desert Bivouac (from 130€), and 3-Day Adventure (from 190€).\n"
+    "4. End with an '<h2>Frequently Asked Questions</h2>' section containing 3 practical Q&As that travelers search on Google.\n"
+    "5. Include clear calls to action pointing to https://irrikitourism.com/#packages and direct WhatsApp booking (+212 715 131 709).\n"
+    "Format in clean semantic HTML with <p>, <h2>, <h3>, <ul>, <li>, and <strong> (no <h1> or markdown code fences)."
 )
-user_prompt = f"Write a comprehensive, SEO-rich Sahara travel guide in English titled: '{selected_topic}'."
+user_prompt = f"Write a comprehensive, keyword-optimized Sahara desert travel guide in English titled: '{selected_topic}'."
 
 # Attempt 1: GitHub Models Inference API
 if not article_html and GH_TOKEN:
