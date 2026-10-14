@@ -29,12 +29,15 @@ headers = {
     "User-Agent": "Mozilla/5.0"
 }
 
-# Purge default demo posts if any remain in WordPress
+# Purge default demo posts or outdated non-relevant posts
 try:
-    print("Checking for default demo posts to purge...")
+    print("Checking for demo or non-English posts to purge...")
     demo_check = requests.get(f"{wp_api_endpoint}&per_page=50", headers=headers, timeout=15)
     if demo_check.status_code == 200:
-        demo_kws = ["clarity", "lessons learned", "creative living", "uncharted waters", "simple joys", "slowing down", "creative roadblocks", "daily habits", "hello world"]
+        demo_kws = [
+            "clarity", "lessons learned", "creative living", "uncharted waters",
+            "simple joys", "slowing down", "creative roadblocks", "daily habits", "hello world"
+        ]
         for p in demo_check.json():
             p_title = p.get("title", {}).get("rendered", "").lower()
             p_id = p.get("id")
@@ -71,31 +74,29 @@ if os.path.exists(TOPICS_FILE):
         topics = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
 if not topics:
-    selected_topic = "Bivouac Erg Chegaga: Guide Complet du Séjour Saharien"
+    selected_topic = "Erg Chegaga: The Ultimate Guide to Morocco's Wildest Desert Dunes (2026)"
 else:
     selected_topic = topics[0]
 
 print(f"\n==========================================")
 print(f"Selected Topic: {selected_topic}")
+print(f"Language: English (100% English Blog)")
 print(f"==========================================\n")
 
-# 3. Content Generation
+# 3. Content Generation in 100% English
 article_html = ""
 article_excerpt = ""
 
-is_french = any(w in selected_topic.lower() for w in ["dunes de", "excursion", "bivouac", "maroc", "désert", "desert chegaga", "prix", "meilleure", "dormir", "nuit", "comment", "guide complet", "randonnée", "traversée", "incontournables"])
-lang_str = "French (Français)" if is_french else "English"
-
 system_prompt = (
-    f"You are an expert Morocco travel journalist and Sahara desert expedition guide writing for 'Irriki Tourism' (https://irrikitourism.com), "
-    f"based in Foum Zguid, Lake Iriki, and Erg Chegaga in southern Morocco. "
-    f"Write an engaging, authoritative, 900-word SEO-optimized travel blog post in {lang_str} that focuses 100% on the exact title provided. "
-    f"Format in clean semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, and <strong> tags (do NOT include <h1> or markdown code fences). "
-    f"Naturally mention Irriki Tourism's authentic offerings: 4x4 desert expeditions to Erg Chegaga & Lake Iriki from Foum Zguid, "
-    f"traditional Berber bivouac camp under the stars, sunset camel trekking, sandboarding, and direct booking via WhatsApp (+212 715 131 709 / https://irrikitourism.com/#packages). "
-    f"The very first <p> paragraph MUST be a compelling 2-sentence summary specifically tailored to the topic so it also serves as the meta description/excerpt."
+    "You are an expert Moroccan Sahara desert travel writer and expedition guide working for 'Irriki Tourism' (https://irrikitourism.com), "
+    "a premier local desert tour operator based in Foum Zguid, Lake Iriki, and Erg Chegaga in southern Morocco. "
+    "Write an engaging, authoritative, 950-word SEO-optimized travel blog post strictly in ENGLISH that focuses 100% on the exact title provided. "
+    "Format in clean semantic HTML using <p>, <h2>, <h3>, <ul>, <li>, and <strong> tags (do NOT include <h1> or markdown code fences). "
+    "Naturally feature Irriki Tourism's authentic desert services: 4x4 off-road expeditions from Foum Zguid across Lake Iriki dry salt flats, "
+    "traditional Berber bivouac camp stays under the Milky Way, sunset camel trekking, sandboarding the high dunes, and direct booking via WhatsApp (+212 715 131 709 / https://irrikitourism.com/#packages). "
+    "The very first <p> paragraph MUST be an inspiring 2-sentence hook and summary that also acts as the meta excerpt."
 )
-user_prompt = f"Write a comprehensive, SEO-optimized travel guide in {lang_str} titled: '{selected_topic}'."
+user_prompt = f"Write a comprehensive, SEO-rich Sahara travel guide in English titled: '{selected_topic}'."
 
 # Attempt 1: GitHub Models Inference API
 if not article_html and GH_TOKEN:
@@ -161,36 +162,36 @@ if article_html and not article_excerpt:
         if len(clean_p) > 40:
             article_excerpt = clean_p[:240]
 
-# Fallback: Rich Sahara Travel Guide Generator
+# Fallback: Rich English Sahara Travel Guide Generator
 if not article_html or not article_excerpt:
-    article_excerpt = f"Planifiez votre aventure inoubliable dans le Sahara marocain avec notre guide complet pour {selected_topic}. Conseils de l'équipe locale d'Irriki Tourism à Foum Zguid et au lac Iriki."
+    article_excerpt = f"Plan your unforgettable Moroccan Sahara adventure with our insider guide to {selected_topic}. Tips from local native desert guides at Irriki Tourism in Foum Zguid & Lake Iriki."
     article_html = f"""
-<p>Partir à la conquête des dunes dorées et des grands espaces sauvages du Sahara marocain est une expérience hors du commun. Dans ce guide consacré à <strong>{selected_topic}</strong>, notre équipe locale d'experts chez <a href="https://irrikitourism.com/">Irriki Tourism</a> vous dévoile tous les secrets pour réussir votre expédition au départ de Foum Zguid vers l'Erg Chegaga et le lac Iriki.</p>
-<h2>Pourquoi Choisir l'Erg Chegaga et Foum Zguid ?</h2>
-<p>Situé entre l'Anti-Atlas et les plus hautes vagues de sable du Maroc, le désert de l'Erg Chegaga est réputé pour sa nature sauvage préservée du tourisme de masse. L'accès par Foum Zguid vous fait traverser le mythique lac asséché d'Iriki, célèbre pour ses fossiles et ses pistes historiques du Paris-Dakar.</p>
+<p>Venturing deep into the golden dunes and boundless desert landscapes of southern Morocco is an extraordinary journey. In this insider travel guide to <strong>{selected_topic}</strong>, our experienced desert team at <a href="https://irrikitourism.com/">Irriki Tourism</a> shares everything you need to know before departing Foum Zguid for the breathtaking dunes of Erg Chegaga and Lake Iriki.</p>
+<h2>Why Choose Erg Chegaga and Foum Zguid?</h2>
+<p>Situated between the rugged Anti-Atlas mountains and Morocco's highest rolling sea of sand, Erg Chegaga represents the untamed, authentic soul of the Sahara. Far from overcrowded tourist circuits, entering via Foum Zguid leads you across the dried prehistoric clay bed of Lake Iriki, renowned for ancient fossils, desert mirages, and historic Paris-Dakar rally tracks.</p>
 <ul>
-    <li><strong>Expéditions 4x4 Hors-Piste:</strong> Franchissez les plateaux désertiques et les dunes géantes avec nos chauffeurs sahariens natifs de la région.</li>
-    <li><strong>Bivouac sous les Étoiles:</strong> Passez la nuit dans notre campement de tentes berbères traditionnelles avec dîner marocain au coin du feu et musique nomade.</li>
-    <li><strong>Coucher de Soleil et Sandboarding:</strong> Grimpez sur les crêtes de sable à dos de dromadaire ou dévalez les pentes dorées en sandboard.</li>
+    <li><strong>Off-Road 4x4 Expeditions:</strong> Navigate stony desert plateaus (hamadas) and towering dunes with native Berber drivers who have navigated these sands for generations.</li>
+    <li><strong>Traditional Berber Bivouac:</strong> Spend unforgettable nights in handcrafted nomad tents under a blanket of brilliant desert constellations, complete with homecooked tagines and campfire folklore.</li>
+    <li><strong>Sunset Camel Treks &amp; Sandboarding:</strong> Ascend dune crests as the sun bathes the sand in crimson and gold, or glide down pristine 300-meter slopes on a sandboard.</li>
 </ul>
-<h2>Nos Formules de Circuits et Bivouac à Erg Chegaga</h2>
+<h2>Curated Irriki Tourism Desert Packages</h2>
 <ol>
-    <li><strong>Circuit 1 Journée (150&euro; standard / 120&euro; groupe 4+):</strong> Traversée de Foum Zguid, Ajermia, lac Iriki et coucher de soleil sur les grandes dunes.</li>
-    <li><strong>Formule 2 Jours / 1 Nuit (160&euro; standard / 130&euro; groupe 4+):</strong> Safari 4x4, nuit féerique en bivouac sous la Voie lactée et petit-déjeuner face aux dunes.</li>
-    <li><strong>Aventure 3 Jours / 2 Nuits (230&euro; standard / 190&euro; groupe 4+):</strong> Randonnée chamelière approfondie, oasis secrètes et immersion totale chez les nomades.</li>
+    <li><strong>1-Day Sahara Discovery (150&euro; standard / 120&euro; groups 4+):</strong> Crossing Foum Zguid, Ajermia, Lake Iriki, and reaching Erg Chegaga for golden sunset dunes.</li>
+    <li><strong>2-Day / 1-Night Desert Bivouac (160&euro; standard / 130&euro; groups 4+):</strong> 4x4 wilderness crossing, campfire nomad music, overnight tent accommodation, and sunrise over the dunes.</li>
+    <li><strong>3-Day / 2-Night Deep Desert Odyssey (230&euro; standard / 190&euro; groups 4+):</strong> Immersive camel trekking, remote oasis exploration, ancient petroglyphs, and full desert disconnection.</li>
 </ol>
-<p>Pour réserver votre expédition personnalisée, consultez nos <a href="https://irrikitourism.com/#packages">Packs Irriki Tourism</a> ou contactez notre guide directement par <a href="https://wa.me/212715131709">WhatsApp (+212 715 131 709)</a>.</p>
+<p>Ready to experience the magic of the Moroccan desert? Discover our <a href="https://irrikitourism.com/#packages">Tour Packages</a> or message our local guides directly via <a href="https://wa.me/212715131709">WhatsApp (+212 715 131 709)</a>.</p>
 """
 
-# Embed authentic Sahara photo
+# Embed authentic Sahara photo with English caption
 sahara_pool = [
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/pexels-tomas-malik-793526-1703312-scaled.jpg", "Les grandes dunes dorées de l'Erg Chegaga"),
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/lac-iriqui.jpg", "Traversée du lac Iriki en 4x4"),
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/0c.jpg", "Immersion dans le désert marocain avec Irriki Tourism"),
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/1c01d87e253f9de742180a3b3e3ab5b1.jpg", "Bivouac traditionnel berbère sous les étoiles"),
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/Camel-Trekking-Tour.png", "Randonnée à dos de dromadaire au coucher du soleil"),
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/Quad-biking-marrakech.jpg", "Safari quad et 4x4 dans les dunes de Chegaga"),
-    ("https://irrikitourism.com/wp-content/uploads/2025/04/stars.jpg", "Nuit étoilée et ciel pur du Sahara au bivouac")
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/pexels-tomas-malik-793526-1703312-scaled.jpg", "Golden sand dunes of Erg Chegaga at sunset"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/lac-iriqui.jpg", "4x4 desert crossing through Lake Iriki salt flats"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/0c.jpg", "Deep Sahara desert expedition with Irriki Tourism"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/1c01d87e253f9de742180a3b3e3ab5b1.jpg", "Traditional Berber bivouac camp under the Sahara stars"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/Camel-Trekking-Tour.png", "Sunset camel trekking across Erg Chegaga dunes"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/Quad-biking-marrakech.jpg", "Quad biking and 4x4 dune safari across Chegaga"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/stars.jpg", "Crystal-clear night sky and stargazing at Lake Iriki")
 ]
 chosen_img, img_alt = random.choice(sahara_pool)
 photo_html = f'<figure style="margin: 2rem 0; text-align: center;"><img src="{chosen_img}" alt="{img_alt}" style="width: 100%; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" /><figcaption style="font-size: 0.85rem; color: #78716c; margin-top: 0.5rem; font-style: italic;">{img_alt} - Irriki Tourism</figcaption></figure>'
@@ -209,7 +210,7 @@ post_data = {
     "format": "standard"
 }
 
-print(f"\nPosting article to WordPress: {wp_api_endpoint}...")
+print(f"\nPosting English article to WordPress: {wp_api_endpoint}...")
 res = requests.post(wp_api_endpoint, headers=headers, json=post_data, timeout=30)
 print(f"WordPress Response Status Code: {res.status_code}")
 
