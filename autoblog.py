@@ -17,7 +17,8 @@ if not WP_URL or not WP_USERNAME or not WP_APP_PASSWORD:
     print("Error: Missing WordPress configuration (WP_URL, WP_USERNAME, or WP_APP_PASSWORD).")
     exit(1)
 
-wp_api_endpoint = f"{WP_URL}/wp-json/wp/v2/posts"
+# Reliable LiteSpeed REST API endpoint
+wp_api_endpoint = f"{WP_URL}/?rest_route=/wp/v2/posts"
 clean_password = WP_APP_PASSWORD.replace(" ", "")
 credentials = f"{WP_USERNAME}:{clean_password}"
 token = base64.b64encode(credentials.encode()).decode("utf-8")
@@ -28,11 +29,27 @@ headers = {
     "User-Agent": "Mozilla/5.0"
 }
 
+# Purge default demo posts if any remain in WordPress
+try:
+    print("Checking for default demo posts to purge...")
+    demo_check = requests.get(f"{wp_api_endpoint}&per_page=50", headers=headers, timeout=15)
+    if demo_check.status_code == 200:
+        demo_kws = ["clarity", "lessons learned", "creative living", "uncharted waters", "simple joys", "slowing down", "creative roadblocks", "daily habits", "hello world"]
+        for p in demo_check.json():
+            p_title = p.get("title", {}).get("rendered", "").lower()
+            p_id = p.get("id")
+            if any(kw in p_title for kw in demo_kws) or p_id in [1, 14, 16, 18, 20, 22, 24, 26, 28]:
+                del_url = f"{WP_URL}/?rest_route=/wp/v2/posts/{p_id}&force=true"
+                requests.delete(del_url, headers=headers, timeout=10)
+                print(f"Purged demo post #{p_id}: {p.get('title', {}).get('rendered', '')}")
+except Exception as e:
+    print(f"Demo purge note: {e}")
+
 # Check if 5 posts were already published today (UTC date)
 today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 if not FORCE_POST:
     try:
-        recent_res = requests.get(f"{wp_api_endpoint}?per_page=15", headers=headers, timeout=15)
+        recent_res = requests.get(f"{wp_api_endpoint}&per_page=15", headers=headers, timeout=15)
         if recent_res.status_code == 200:
             posts = recent_res.json()
             today_posts = [p for p in posts if p.get("date_gmt", "")[:10] == today_str]
@@ -54,60 +71,17 @@ if os.path.exists(TOPICS_FILE):
         topics = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
 if not topics:
-    selected_topic = "Ultimate Sahara Desert Tour from Foum Zguid to Lake Iriki"
+    selected_topic = "Bivouac Erg Chegaga: Guide Complet du Séjour Saharien"
 else:
     selected_topic = topics[0]
 
-print(f"\nProcessing Topic: '{selected_topic}'")
+print(f"\n==========================================")
+print(f"Selected Topic: {selected_topic}")
+print(f"==========================================\n")
 
-# Organic randomized delay (10 to 45 seconds)
-delay_seconds = random.randint(10, 45)
-print(f"Applying organic delay of {delay_seconds} seconds...")
-time.sleep(delay_seconds)
-
-article_html = None
-article_excerpt = None
-
-CUSTOM_TOPIC_GUIDES = {
-    "Best Sahara Desert Tour from Foum Zguid (2026 Complete Guide)": {
-        "excerpt": "Planning a Sahara desert adventure in southern Morocco? Discover why Foum Zguid and Lake Iriki offer the most authentic 4x4, camel trekking, and Berber camp experience in 2026.",
-        "content": """
-<p>Located at the southern edge of the Anti-Atlas mountains, <strong>Foum Zguid</strong> is the premier gateway to the untouched expanses of the Moroccan Sahara. Unlike crowded commercial dunes, embarking on the <strong>Best Sahara Desert Tour from Foum Zguid</strong> with <a href="https://irrikitourism.com/#packages">Irriki Tourism</a> takes you along legendary Paris-Dakar tracks across stony hamadas, fossil-rich plateaus, and the vast salt flats of <strong>Lake Iriki</strong> to golden sand dunes.</p>
-<h2>Why Start Your Sahara Expedition in Foum Zguid?</h2>
-<ul>
-    <li><strong>Authentic Unspoiled Wilderness:</strong> Experience total desert silence across Iriki National Park without mass tourism crowds.</li>
-    <li><strong>Diverse Landscapes in One Journey:</strong> Traverse dramatic rocky plateaus, prehistoric trilobite fossil beds, the dry salt lake of Iriki, and towering golden dunes.</li>
-    <li><strong>Genuine Nomadic &amp; Berber Hospitality:</strong> Share traditional Moroccan mint tea, fresh sand-baked bread (Mella), and slow-cooked tagines around the campfire.</li>
-</ul>
-<h2>Top Tour Packages from Foum Zguid</h2>
-<p>Whether you have a single day or several nights, <a href="https://irrikitourism.com/#packages">Irriki Tourism</a> offers tailored desert packages:</p>
-<ol>
-    <li><strong>IRIKI 1-Day Experience (150&euro; / 120&euro; group):</strong> Full-day 4x4 adventure from Foum Zguid via Ajermia and dry Lake Iriki to the dunes for sandboarding and sunset views.</li>
-    <li><strong>Iriki 2-Day / 1-Night Experience (160&euro; / 130&euro; group):</strong> Combine prehistoric rock carvings and fossil discovery with a 4x4 dune safari and an overnight stay with warm traditional meals.</li>
-    <li><strong>Iriki 3-Day / 2-Night Camel &amp; Oasis Adventure (230&euro; / 190&euro; group):</strong> Multi-day camel trek deep into the dunes, sleeping under the Sahara stars and camping near a hidden desert oasis.</li>
-</ol>
-<p>Ready to plan your departure? Contact our local Foum Zguid guides directly via <a href="https://wa.me/212715131709">WhatsApp (+212 715 131 709)</a> or explore our packages at <a href="https://irrikitourism.com/">irrikitourism.com</a>!</p>
-"""
-    },
-    "Lake Iriki National Park: 4x4 Off-Road Expedition & Fossil Hunting Guide": {
-        "excerpt": "Explore the shimmering salt flats, prehistoric marine fossils, and towering sand dunes of Lake Iriki National Park on a guided 4x4 off-road expedition with Irriki Tourism.",
-        "content": """
-<p>Stretching between the Draa River valley and the foothills of the Anti-Atlas near Foum Zguid, <strong>Lake Iriki National Park</strong> is one of southern Morocco's most dramatic natural wonders. Once a vast prehistoric sea and later a seasonal wetland, the dry lakebed of <strong>Iriki</strong> now blends endless white-gold salt flats with rolling Sahara dunes.</p>
-<h2>What You Will See on a Lake Iriki 4x4 Expedition</h2>
-<ul>
-    <li><strong>Prehistoric Trilobite &amp; Orthoceras Fossils:</strong> Millions of years ago, the Sahara lay beneath the Paleozoic ocean. Along the rocky ridges between Foum Zguid and Ajermia, you can spot ancient marine fossils embedded directly in the stone.</li>
-    <li><strong>The Endless Mirror of Dry Lake Iriki:</strong> Crossing the flat chott (dry salt lake) in a 4x4 offers surreal desert mirages and 360-degree horizons.</li>
-    <li><strong>Golden Dunes &amp; Sunset Sandboarding:</strong> At the edge of Lake Iriki rise untouched dunes ideal for sandboarding, camel rides, and golden-hour photography.</li>
-</ul>
-<h2>Book Your Guided 4x4 Expedition</h2>
-<p>All <a href="https://irrikitourism.com/#packages">Irriki Tourism</a> 4x4 tours are led by experienced native Sahara drivers born in the region. Book your 1-day, 2-day, or 3-day excursion today at <a href="https://irrikitourism.com/">irrikitourism.com</a> or message us on <a href="https://wa.me/212715131709">WhatsApp</a>.</p>
-"""
-    }
-}
-
-if selected_topic in CUSTOM_TOPIC_GUIDES:
-    article_excerpt = CUSTOM_TOPIC_GUIDES[selected_topic]["excerpt"]
-    article_html = CUSTOM_TOPIC_GUIDES[selected_topic]["content"].strip()
+# 3. Content Generation
+article_html = ""
+article_excerpt = ""
 
 is_french = any(w in selected_topic.lower() for w in ["dunes de", "excursion", "bivouac", "maroc", "désert", "desert chegaga", "prix", "meilleure", "dormir", "nuit", "comment", "guide complet", "randonnée", "traversée", "incontournables"])
 lang_str = "French (Français)" if is_french else "English"
@@ -189,24 +163,43 @@ if article_html and not article_excerpt:
 
 # Fallback: Rich Sahara Travel Guide Generator
 if not article_html or not article_excerpt:
-    article_excerpt = f"Plan your unforgettable Moroccan Sahara adventure with our complete guide to {selected_topic}. Discover local tips from Irriki Tourism in Foum Zguid & Lake Iriki."
+    article_excerpt = f"Planifiez votre aventure inoubliable dans le Sahara marocain avec notre guide complet pour {selected_topic}. Conseils de l'équipe locale d'Irriki Tourism à Foum Zguid et au lac Iriki."
     article_html = f"""
-<p>Venturing into the golden dunes and vast salt flats of southern Morocco is a bucket-list journey for travelers seeking raw natural beauty and cultural authenticity. In this detailed Sahara travel guide to <strong>{selected_topic}</strong>, our local desert team at <a href="https://irrikitourism.com/">Irriki Tourism</a> shares everything you need to know before setting off from Foum Zguid toward Lake Iriki.</p>
-<h2>What Makes Lake Iriki &amp; Foum Zguid So Special?</h2>
-<p>Situated between the Anti-Atlas mountains and the great Erg Chigaga dune sea, the Lake Iriki region combines dramatic rocky hamadas, ancient prehistoric fossil beds, and tranquil golden sand dunes far from mass-tourism routes.</p>
+<p>Partir à la conquête des dunes dorées et des grands espaces sauvages du Sahara marocain est une expérience hors du commun. Dans ce guide consacré à <strong>{selected_topic}</strong>, notre équipe locale d'experts chez <a href="https://irrikitourism.com/">Irriki Tourism</a> vous dévoile tous les secrets pour réussir votre expédition au départ de Foum Zguid vers l'Erg Chegaga et le lac Iriki.</p>
+<h2>Pourquoi Choisir l'Erg Chegaga et Foum Zguid ?</h2>
+<p>Situé entre l'Anti-Atlas et les plus hautes vagues de sable du Maroc, le désert de l'Erg Chegaga est réputé pour sa nature sauvage préservée du tourisme de masse. L'accès par Foum Zguid vous fait traverser le mythique lac asséché d'Iriki, célèbre pour ses fossiles et ses pistes historiques du Paris-Dakar.</p>
 <ul>
-    <li><strong>4x4 Off-Road Desert Expeditions:</strong> Follow historic rally tracks across dry Lake Iriki with experienced native Sahara drivers.</li>
-    <li><strong>Sunset Camel Trekking &amp; Sandboarding:</strong> Ride across the dunes at golden hour or carve down steep desert slopes on a sandboard.</li>
-    <li><strong>Authentic Berber Bivouac Camp:</strong> Sleep in cozy traditional Berber tents (1 to 4 guests per tent) with all Moroccan meals included and crystal-clear Sahara stargazing.</li>
+    <li><strong>Expéditions 4x4 Hors-Piste:</strong> Franchissez les plateaux désertiques et les dunes géantes avec nos chauffeurs sahariens natifs de la région.</li>
+    <li><strong>Bivouac sous les Étoiles:</strong> Passez la nuit dans notre campement de tentes berbères traditionnelles avec dîner marocain au coin du feu et musique nomade.</li>
+    <li><strong>Coucher de Soleil et Sandboarding:</strong> Grimpez sur les crêtes de sable à dos de dromadaire ou dévalez les pentes dorées en sandboard.</li>
 </ul>
-<h2>Choose Your Ideal Sahara Tour Package</h2>
+<h2>Nos Formules de Circuits et Bivouac à Erg Chegaga</h2>
 <ol>
-    <li><strong>IRIKI 1-Day Experience (150&euro; standard / 120&euro; group of 4+):</strong> A full day exploring Foum Zguid, Ajermia, dry Lake Iriki, and sunset dunes.</li>
-    <li><strong>Iriki 2-Day / 1-Night Experience (160&euro; standard / 130&euro; group of 4+):</strong> Ancient rock carvings, overnight desert hospitality, and a thrilling 4x4 dune safari.</li>
-    <li><strong>Iriki 3-Day / 2-Night Adventure (230&euro; standard / 190&euro; group of 4+):</strong> Deep Sahara camel trekking, oasis camping, and panoramic desert viewpoints.</li>
+    <li><strong>Circuit 1 Journée (150&euro; standard / 120&euro; groupe 4+):</strong> Traversée de Foum Zguid, Ajermia, lac Iriki et coucher de soleil sur les grandes dunes.</li>
+    <li><strong>Formule 2 Jours / 1 Nuit (160&euro; standard / 130&euro; groupe 4+):</strong> Safari 4x4, nuit féerique en bivouac sous la Voie lactée et petit-déjeuner face aux dunes.</li>
+    <li><strong>Aventure 3 Jours / 2 Nuits (230&euro; standard / 190&euro; groupe 4+):</strong> Randonnée chamelière approfondie, oasis secrètes et immersion totale chez les nomades.</li>
 </ol>
-<p>Ready to experience the magic of the Moroccan Sahara? Visit <a href="https://irrikitourism.com/#packages">Irriki Tourism Packages</a> or message our team directly on <a href="https://wa.me/212715131709">WhatsApp (+212 715 131 709)</a> to customize your trip!</p>
+<p>Pour réserver votre expédition personnalisée, consultez nos <a href="https://irrikitourism.com/#packages">Packs Irriki Tourism</a> ou contactez notre guide directement par <a href="https://wa.me/212715131709">WhatsApp (+212 715 131 709)</a>.</p>
 """
+
+# Embed authentic Sahara photo
+sahara_pool = [
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/pexels-tomas-malik-793526-1703312-scaled.jpg", "Les grandes dunes dorées de l'Erg Chegaga"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/lac-iriqui.jpg", "Traversée du lac Iriki en 4x4"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/0c.jpg", "Immersion dans le désert marocain avec Irriki Tourism"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/1c01d87e253f9de742180a3b3e3ab5b1.jpg", "Bivouac traditionnel berbère sous les étoiles"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/Camel-Trekking-Tour.png", "Randonnée à dos de dromadaire au coucher du soleil"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/Quad-biking-marrakech.jpg", "Safari quad et 4x4 dans les dunes de Chegaga"),
+    ("https://irrikitourism.com/wp-content/uploads/2025/04/stars.jpg", "Nuit étoilée et ciel pur du Sahara au bivouac")
+]
+chosen_img, img_alt = random.choice(sahara_pool)
+photo_html = f'<figure style="margin: 2rem 0; text-align: center;"><img src="{chosen_img}" alt="{img_alt}" style="width: 100%; border-radius: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" /><figcaption style="font-size: 0.85rem; color: #78716c; margin-top: 0.5rem; font-style: italic;">{img_alt} - Irriki Tourism</figcaption></figure>'
+
+if "<h2>" in article_html:
+    parts = article_html.split("<h2>", 1)
+    article_html = parts[0] + photo_html + "<h2>" + parts[1]
+else:
+    article_html += photo_html
 
 post_data = {
     "title": selected_topic,
